@@ -17,8 +17,11 @@ var val = function(key, config) {
   return config[key] || defaults[key];
 };
 
-
 var MacLookup = function(config) {
+  this.setConfig(config);
+};
+
+MacLookup.prototype.setConfig = function(config) {
   var config = config || {};
 
   this.rebuilding = false;
@@ -39,7 +42,10 @@ MacLookup.prototype.rebuild = function(next) {
     var process = function(db) {
       var lineCount = 0;
       lineReader.eachLine(ml.options.txt, function(line, last) {
-        lineCount++;//
+        lineCount++; //
+        if (lineCount % 1000 == 0) {
+          console.log('rebuilding, current read line #' + lineCount);
+        }
         line = line.trimLeft().trimRight();
         if (line.length > 15) {
           // Get OUI
@@ -113,11 +119,11 @@ MacLookup.prototype.rebuild = function(next) {
     parse(next);
   } else {
     request(this.options.url)
-        .on('error', console.error)
-        .on('end', function() {
-          parse(next);
-        })
-        .pipe(fs.createWriteStream(this.options.txt));
+      .on('error', console.error)
+      .on('end', function() {
+        parse(next);
+      })
+      .pipe(fs.createWriteStream(this.options.txt));
   }
 
 };
@@ -139,7 +145,7 @@ MacLookup.prototype.lookup = function(oui, next) {
   };
 
   this.options.db.get(query, param, function(err, row) {
-    next(err ? err : null, (!!row) ? row.name : null);
+    next(err ? err : null, (!!row) ? row : null);
   });
 
 };
@@ -153,4 +159,4 @@ MacLookup.prototype.each = function(each, next) {
 
 };
 
-module.exports = MacLookup;
+module.exports = new MacLookup();
